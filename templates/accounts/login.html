@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Login - E-Learning
+{% endblock %}
+
+{% block content %}
+  <div class="bg-white/40 backdrop-blur-xl border border-white/60 shadow-2xl rounded-3xl p-8">
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold tracking-tight text-black">Selamat Datang</h2>
+      <p class="text-gray-700 mt-2 text-sm font-medium">Masuk untuk melanjutkan sesi Anda</p>
+    </div>
+
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-black">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            <p class="text-red-500 text-xs mt-1 font-medium">{{ field.errors.0 }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <button type="submit" class="w-full mt-4 flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02]">Masuk Sekarang</button>
+    </form>
+
+    <p class="mt-8 text-center text-sm text-gray-700 font-medium">
+      Belum punya akun?
+      <a href="{% url 'accounts:register' %}" class="text-blue-600 hover:text-blue-800 transition-colors font-bold">Daftar sebagai Mahasiswa</a>
+    </p>
+  </div>
+{% endblock %}
