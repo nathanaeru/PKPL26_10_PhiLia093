@@ -2,7 +2,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView
 from django.core.cache import cache
-from .forms import MahasiswaRegistrationForm, CustomAuthenticationForm
+from .forms import (
+    MahasiswaRegistrationForm,
+    CustomAuthenticationForm,
+    StaffRegistrationForm,
+    StaffAuthenticationForm,
+)
 
 
 def register_view(request):
@@ -16,6 +21,19 @@ def register_view(request):
     else:
         form = MahasiswaRegistrationForm()
     return render(request, "accounts/register.html", {"form": form})
+
+
+def staff_register_view(request):
+    if request.method == "POST":
+        form = StaffRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect("forum:landing")
+    else:
+        form = StaffRegistrationForm()
+
+    return render(request, "accounts/staff_register.html", {"form": form})
 
 
 class CustomLoginView(LoginView):
@@ -56,6 +74,13 @@ class CustomLoginView(LoginView):
             cache_key = f"login_attempts_{username}"
             cache.delete(cache_key)
         return super().form_valid(form)
+
+
+class StaffLoginView(CustomLoginView):
+    # Menggunakan template khusus staf
+    template_name = "accounts/staff_login.html"
+    # Menggunakan form login yang mewajibkan kode akses
+    form_class = StaffAuthenticationForm
 
 
 def logout_view(request):
