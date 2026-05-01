@@ -14,6 +14,14 @@
     <form method="post" class="space-y-5">
       {% csrf_token %}
 
+      {% if form.non_field_errors %}
+        <div class="bg-red-100/70 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-4 backdrop-blur-md shadow-sm">
+          {% for error in form.non_field_errors %}
+            <p class="text-sm font-bold text-center">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
       {% for field in form %}
         <div>
           <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-black">{{ field.label }}</label>
