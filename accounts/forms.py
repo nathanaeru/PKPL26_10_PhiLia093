@@ -99,7 +99,7 @@ class StaffAuthenticationForm(AuthenticationForm):
         # Pastikan user yang mencoba login benar-benar berstatus staf
         if user and user.role not in ["dosen", "asisten_dosen"]:
             raise forms.ValidationError(
-                "Akses ditolak. Akun ini terdaftar sebagai Mahasiswa."
+                self.error_messages["invalid_login"], code="invalid_login"
             )
 
         return cleaned_data
