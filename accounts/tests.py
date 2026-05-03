@@ -1,6 +1,10 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, RequestFactory
 from django.urls import reverse
 from django.core.cache import cache
+from django.conf import settings
+
+from .forms import StaffRegistrationForm
+from . import views
 
 from .models import CustomUser
 
@@ -81,8 +85,6 @@ class AuthenticationSecurityTests(TestCase):
             self.assertEqual(response.status_code, 200)
 
         # Percobaan ke-6 (menggunakan kredensial dan kode .env yang BENAR sekalipun)
-        from django.conf import settings
-
         response_locked = self.client.post(
             staff_login_url,
             {
@@ -145,8 +147,6 @@ class AuthenticationSecurityTests(TestCase):
         staff_login_url = reverse("accounts:staff_login")
 
         # Mahasiswa login di portal staf dengan kredensial BENAR
-        from django.conf import settings
-
         response = self.client.post(
             staff_login_url,
             {
@@ -167,8 +167,6 @@ class AuthenticationSecurityTests(TestCase):
         """Uji coba Dosen dapat login lewat portal staf dengan kode akses dosen"""
         staff_login_url = reverse("accounts:staff_login")
 
-        from django.conf import settings
-
         response = self.client.post(
             staff_login_url,
             {
@@ -186,8 +184,6 @@ class AuthenticationSecurityTests(TestCase):
     def test_asdos_can_use_staff_login_with_dosen_code(self):
         """Uji coba Asdos dapat login lewat portal staf memakai kode dosen yang juga valid"""
         staff_login_url = reverse("accounts:staff_login")
-
-        from django.conf import settings
 
         response = self.client.post(
             staff_login_url,
@@ -220,31 +216,57 @@ class AuthenticationSecurityTests(TestCase):
         self.assertContains(response, "Kode akses staf tidak valid.")
         self.assertNotIn("_auth_user_id", self.client.session)
 
-    def test_asdos_can_use_staff_login(self):
-        """Uji coba Asdos dapat login lewat portal staf dengan kode akses asdos"""
-        staff_login_url = reverse("accounts:staff_login")
-
-        from django.conf import settings
+    def test_staff_registration_with_dosen_code_sets_dosen_role(self):
+        """Uji coba registrasi staf dengan kode dosen menghasilkan role dosen"""
+        staff_register_url = reverse("accounts:staff_register")
 
         response = self.client.post(
-            staff_login_url,
+            staff_register_url,
             {
-                "username": "asdos_uji",
-                "password": "passwordKuat123",
-                "access_code": settings.ASDOS_ACCESS_CODE,
+                "username": "dosen_baru",
+                "email": "dosen_baru@ui.ac.id",
+                "password1": "passwordKuat123",
+                "password2": "passwordKuat123",
+                "access_code": settings.DOSEN_ACCESS_CODE,
             },
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("forum:landing"))
-        self.assertIn("_auth_user_id", self.client.session)
-        self.assertEqual(int(self.client.session["_auth_user_id"]), self.asdos.id)
+        user = CustomUser.objects.get(username="dosen_baru")
+        self.assertEqual(user.role, "dosen")
+        self.assertTrue(user.check_password("passwordKuat123"))
+
+    def test_staff_registration_rejects_invalid_access_code(self):
+        """Uji coba registrasi staf menolak kode akses yang tidak dikenal"""
+        form = StaffRegistrationForm(
+            data={
+                "username": "staf_invalid",
+                "email": "staf_invalid@ui.ac.id",
+                "password1": "passwordKuat123",
+                "password2": "passwordKuat123",
+                "access_code": "KODE_TIDAK_VALID",
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("access_code", form.errors)
+        self.assertContains(
+            self.client.post(
+                reverse("accounts:staff_register"),
+                {
+                    "username": "staf_invalid",
+                    "email": "staf_invalid@ui.ac.id",
+                    "password1": "passwordKuat123",
+                    "password2": "passwordKuat123",
+                    "access_code": "KODE_TIDAK_VALID",
+                },
+            ),
+            "Kode akses tidak valid atau tidak dikenali.",
+        )
 
     def test_staff_registration_with_asdos_code_sets_asdos_role(self):
         """Uji coba registrasi staf dengan kode asdos menghasilkan role asisten_dosen"""
         staff_register_url = reverse("accounts:staff_register")
-
-        from django.conf import settings
 
         response = self.client.post(
             staff_register_url,
@@ -261,3 +283,96 @@ class AuthenticationSecurityTests(TestCase):
         user = CustomUser.objects.get(username="asdos_baru")
         self.assertEqual(user.role, "asisten_dosen")
         self.assertTrue(user.check_password("passwordKuat123"))
+
+    def test_mahasiswa_registration_post_logs_user_in(self):
+        """Uji coba registrasi mahasiswa via POST membuat akun dan login otomatis"""
+        register_url = reverse("accounts:register")
+
+        response = self.client.post(
+            register_url,
+            {
+                "username": "mhs_baru",
+                "email": "mhs_baru@ui.ac.id",
+                "password1": "passwordKuat123",
+                "password2": "passwordKuat123",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/")
+        self.assertTrue(CustomUser.objects.filter(username="mhs_baru").exists())
+        self.assertIn("_auth_user_id", self.client.session)
+
+    def test_mahasiswa_registration_view_get_renders_form(self):
+        """Uji coba halaman registrasi mahasiswa untuk request GET"""
+        response = self.client.get(reverse("accounts:register"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Daftar sebagai Mahasiswa")
+
+    def test_staff_registration_form_save_commit_false(self):
+        """Uji coba save(commit=False) tetap menyiapkan role sebelum disimpan"""
+        form = StaffRegistrationForm(
+            data={
+                "username": "asdos_commit_false",
+                "email": "asdos_commit_false@ui.ac.id",
+                "password1": "passwordKuat123",
+                "password2": "passwordKuat123",
+                "access_code": settings.ASDOS_ACCESS_CODE,
+            }
+        )
+
+        self.assertTrue(form.is_valid())
+        user = form.save(commit=False)
+        self.assertEqual(user.role, "asisten_dosen")
+        self.assertIsNone(user.pk)
+
+    def test_register_view_get_renders_form(self):
+        """Uji coba halaman registrasi mahasiswa untuk request GET"""
+        response = self.client.get(reverse("accounts:register"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Daftar sebagai Mahasiswa")
+
+    def test_staff_register_view_get_renders_form(self):
+        """Uji coba halaman registrasi staf untuk request GET"""
+        response = self.client.get(reverse("accounts:staff_register"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Kode Akses Staf")
+
+    def test_logout_view_redirects_and_clears_session(self):
+        """Uji coba logout menghapus sesi dan mengarahkan ke login mahasiswa"""
+        self.client.login(username="mhs_uji", password="passwordKuat123")
+        self.assertIn("_auth_user_id", self.client.session)
+
+        response = self.client.get(reverse("accounts:logout"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("accounts:login"))
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_custom_user_str_returns_username(self):
+        """Uji coba representasi string user memakai username"""
+        self.assertEqual(str(self.mahasiswa), "mhs_uji")
+
+    def test_staff_login_view_uses_staff_template(self):
+        """Uji coba view login staf memakai form dan template staf"""
+        response = self.client.get(reverse("accounts:staff_login"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/staff_login.html")
+
+    def test_custom_login_view_uses_public_template(self):
+        """Uji coba view login publik memakai template mahasiswa"""
+        response = self.client.get(reverse("accounts:login"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/login.html")
+
+    def test_staff_login_view_class_configuration(self):
+        """Uji coba konfigurasi class-based view login staf"""
+        self.assertEqual(
+            views.StaffLoginView.template_name, "accounts/staff_login.html"
+        )
+        self.assertIs(views.StaffLoginView.form_class, views.StaffAuthenticationForm)
