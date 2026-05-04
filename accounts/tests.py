@@ -13,12 +13,21 @@ class AuthenticationSecurityTests(TestCase):
     def setUp(self):
         # Setup ini dijalankan SEBELUM setiap test dimulai
         self.client = Client()
+        self.login_url = reverse("accounts:login")
 
         # Buat akun mahasiswa bohongan
         self.mahasiswa = CustomUser.objects.create_user(
             username="mhs_uji",
             email="mhs@ui.ac.id",
             password="passwordKuat123",
+            role="mahasiswa",
+        )
+
+        # Akun mahasiswa lain untuk skenario yang memakai kredensial valid berbeda
+        self.mahasiswa_valid = CustomUser.objects.create_user(
+            username="mhs_valid",
+            email="mhs_valid@ui.ac.id",
+            password="PasswordAman123",
             role="mahasiswa",
         )
 
@@ -41,6 +50,107 @@ class AuthenticationSecurityTests(TestCase):
     def tearDown(self):
         # Bersihkan cache setelah test selesai agar tidak bentrok
         cache.clear()
+
+    # TC-SQLi-01: Login Bypass via SQL Injection
+    def test_tc_sqli_01_login_bypass(self):
+        """Memastikan login tidak bisa di-bypass dengan payload SQLi"""
+        response = self.client.post(
+            self.login_url, {"username": "' OR '1'='1' --", "password": "bebas"}
+        )
+        # Harus tetap ditolak dan kembali ke halaman login (HTTP 200)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Nama pengguna atau kata sandi salah.")
+        # Memastikan tidak ada sesi user yang tercipta
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    # TC-BA-01: Password Hashing Verification
+    def test_tc_ba_01_password_hashing(self):
+        """Memastikan password tersimpan dalam bentuk hash (bukan plaintext)"""
+        user_db = CustomUser.objects.get(username="mhs_valid")
+
+        # Harus tidak sama dengan input plaintext
+        self.assertNotEqual(user_db.password, "PasswordAman123")
+        # Harus berawalan format algoritma hash Django (pbkdf2_sha256)
+        self.assertTrue(user_db.password.startswith("pbkdf2_sha256$"))
+
+    # TC-BA-02: Brute Force / Rate Limiting
+    def test_tc_ba_02_rate_limiting(self):
+        """Memastikan sistem mengunci akun sementara setelah percobaan gagal berulang"""
+        # Lakukan 5 kali percobaan gagal
+        for i in range(5):
+            self.client.post(
+                self.login_url, {"username": "mhs_valid", "password": f"WrongPass{i}"}
+            )
+
+        # Percobaan ke-6 (cek pesan rate limit)
+        response = self.client.post(
+            self.login_url,
+            {
+                "username": "mhs_valid",
+                "password": "PasswordAman123",  # Walau password benar, tetap harus ditolak
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response, "Akun terkunci sementara karena 5x percobaan gagal"
+        )
+
+    # TC-BA-03: Session Token Invalidation
+    def test_tc_ba_03_session_invalidation(self):
+        """Memastikan sesi benar-benar dihapus setelah logout"""
+        # Login terlebih dahulu
+        self.client.login(username="mhs_valid", password="PasswordAman123")
+        self.assertIn("_auth_user_id", self.client.session)
+
+        # Proses Logout
+        logout_url = reverse("accounts:logout")
+        self.client.get(logout_url)
+
+        # Verifikasi bahwa data sesi (session token) dihapus dari memori server
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    # TC-BA-05: Informasi Error yang Tidak Informatif
+    def test_tc_ba_05_generic_error_message(self):
+        """Memastikan error message seragam untuk mencegah User Enumeration"""
+        # Skenario 1: Username tidak terdaftar
+        resp_wrong_user = self.client.post(
+            self.login_url, {"username": "user_ga_ada", "password": "PasswordAman123"}
+        )
+
+        # Skenario 2: Username valid, password salah
+        resp_wrong_pass = self.client.post(
+            self.login_url, {"username": "mhs_valid", "password": "SalahPassword"}
+        )
+
+        # Keduanya harus menghasilkan output pesan peringatan yang SAMA PERSIS
+        self.assertContains(resp_wrong_user, "Nama pengguna atau kata sandi salah.")
+        self.assertContains(resp_wrong_pass, "Nama pengguna atau kata sandi salah.")
+
+    # TC-CSRF-01: CSRF Token Presence on Forms
+    def test_tc_csrf_01_token_presence(self):
+        """Memastikan form POST di halaman login dirender dengan tag CSRF"""
+        response = self.client.get(self.login_url)
+        # Mencari keberadaan hidden input csrfmiddlewaretoken di dalam HTML
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
+
+    # TC-CSRF-02: Request dengan CSRF Token Invalid
+    def test_tc_csrf_02_invalid_csrf_token(self):
+        """Memastikan server menolak POST request (HTTP 403) jika token CSRF salah"""
+        # Kita menggunakan Client khusus yang mengaktifkan pemeriksaan ketat CSRF
+        csrf_client = Client(enforce_csrf_checks=True)
+
+        # Kirim request POST dengan token palsu/invalid
+        response = csrf_client.post(
+            self.login_url,
+            {
+                "username": "mhs_valid",
+                "password": "PasswordAman123",
+                "csrfmiddlewaretoken": "invalid_token_12345",
+            },
+        )
+
+        # Sesuai dokumen tugas, harus mengembalikan HTTP 403 Forbidden
+        self.assertEqual(response.status_code, 403)
 
     def test_rate_limiting_lockout(self):
         """Uji coba apakah akun terkunci setelah 5x gagal login"""
