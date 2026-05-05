@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Daftar Tugas</title>
+</head>
+<body>
+    <h1>Daftar Tugas</h1>
+
+    {% for tugas in assignments %}
+        <div style="border:1px solid #ccc; padding:20px; margin:10px;">
+            <h3>{{ tugas.title }}</h3>
+
+            <a href="{% url 'assignment:daftar_submission' tugas.id %}">
+                <button>Lihat Submission</button>
+            </a>
+        </div>
+    {% endfor %}
+</body>
+</html>

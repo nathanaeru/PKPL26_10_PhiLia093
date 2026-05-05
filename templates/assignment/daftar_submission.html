@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Daftar Submission</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f8fc;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .btn {
+            background: #4f46e5;
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #4338ca;
+        }
+
+        p {
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <h1>Daftar Submission</h1>
+
+    {% for submission in submissions %}
+    <div class="card">
+        <h3>{{ submission.student.username }}</h3>
+        <p><strong>Tugas:</strong> {{ submission.assignment_title|default:"Belum ada judul" }}</p>
+        <p><strong>Upload:</strong> {{ submission.uploaded_at|date:"d M Y H:i" }}</p>
+
+        {% if request.user.role == "dosen" or request.user.role == "asisten_dosen" %}
+            <a href="{% url 'assignment:beri_nilai' submission.id %}">
+                <button class="btn">Beri Nilai</button>
+            </a>
+        {% endif %}
+    </div>
+    {% empty %}
+        <p>Belum ada submission.</p>
+    {% endfor %}
+</body>
+</html>
