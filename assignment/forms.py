@@ -1,9 +1,15 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import Tugas, Submission
+from elearning.upload_security import validate_secure_uploaded_file
 
 
 class TugasForm(forms.ModelForm):
+    def clean_file(self):
+        file = self.cleaned_data.get("file")
+        validate_secure_uploaded_file(file)
+        return file
+
     class Meta:
         model = Tugas
         fields = ["title", "description", "deadline", "file"]
@@ -15,6 +21,9 @@ class TugasForm(forms.ModelForm):
                     "type": "datetime-local",
                     "class": "w-full px-4 py-3 mt-1 text-black bg-white/50 border border-white/40 rounded-xl outline-none shadow-inner backdrop-blur-sm transition-all duration-300 focus:bg-white/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50",
                 }
+            ),
+            "file": forms.FileInput(
+                attrs={"accept": ".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip"}
             ),
         }
 

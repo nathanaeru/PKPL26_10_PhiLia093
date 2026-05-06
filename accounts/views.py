@@ -1,3 +1,5 @@
+import hashlib
+
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView
@@ -8,6 +10,12 @@ from .forms import (
     StaffRegistrationForm,
     StaffAuthenticationForm,
 )
+
+
+def _login_attempt_cache_key(username):
+    normalized_username = (username or "").strip().lower().encode("utf-8")
+    username_hash = hashlib.sha256(normalized_username).hexdigest()
+    return f"login_attempts_{username_hash}"
 
 
 def register_view(request):
@@ -42,8 +50,8 @@ class CustomLoginView(LoginView):
 
     def post(self, request, *args, **kwargs):
         username = request.POST.get("username")
-        # Buat kunci pelacakan unik per username
-        cache_key = f"login_attempts_{username}"
+        # Buat kunci pelacakan unik per username tanpa memakai input mentah.
+        cache_key = _login_attempt_cache_key(username)
         attempts = cache.get(cache_key, 0)
 
         # Jika sudah 5 kali gagal, tolak proses login sepenuhnya
@@ -61,7 +69,7 @@ class CustomLoginView(LoginView):
         # Jika login gagal (password salah, dll), tambah jumlah percobaan
         username = self.request.POST.get("username")
         if username:
-            cache_key = f"login_attempts_{username}"
+            cache_key = _login_attempt_cache_key(username)
             attempts = cache.get(cache_key, 0)
             # Simpan jumlah kegagalan di memori selama 15 menit (900 detik)
             cache.set(cache_key, attempts + 1, 900)
@@ -71,7 +79,7 @@ class CustomLoginView(LoginView):
         # Jika login berhasil sebelum kena limit, bersihkan riwayat kegagalan
         username = self.request.POST.get("username")
         if username:
-            cache_key = f"login_attempts_{username}"
+            cache_key = _login_attempt_cache_key(username)
             cache.delete(cache_key)
         return super().form_valid(form)
 

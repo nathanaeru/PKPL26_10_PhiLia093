@@ -1,11 +1,21 @@
 from django.db import models
 from django.conf import settings
 
+from elearning.upload_security import (
+    secure_tugas_upload_path,
+    validate_secure_uploaded_file,
+)
+
 
 class Tugas(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    file = models.FileField(upload_to="tugas_files/", blank=True, null=True)
+    file = models.FileField(
+        upload_to=secure_tugas_upload_path,
+        validators=[validate_secure_uploaded_file],
+        blank=True,
+        null=True,
+    )
     deadline = models.DateTimeField(null=True, blank=True)
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
