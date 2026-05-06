@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Beri Nilai Submission</title>
+</head>
+<body>
+    <h1>Beri Nilai Submission</h1>
+
+    <p><strong>Student:</strong> {{ submission.student.username }}</p>
+    <p><strong>Uploaded:</strong> {{ submission.uploaded_at }}</p>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Nilai:</label><br>
+        <input
+            type="number"
+            name="nilai"
+            value="{% if nilai %}{{ nilai.nilai_angka }}{% endif %}"
+        >
+        <br><br>
+
+        <label>Feedback:</label><br>
+        <textarea name="feedback">{% if nilai %}{{ nilai.feedback }}{% endif %}</textarea>
+        <br><br>
+
+        <button type="submit">Save Nilai</button>
+    </form>
+</body>
+</html>
