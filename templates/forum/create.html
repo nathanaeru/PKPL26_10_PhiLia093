@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Buat Diskusi
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto bg-white/50 backdrop-blur-xl border border-white/60 rounded-3xl shadow-xl p-8">
+
+  <h1 class="text-3xl font-bold mb-6">
+    Buat Diskusi
+  </h1>
+
+  <form method="POST" enctype="multipart/form-data" class="space-y-5">
+
+    {% csrf_token %}
+
+    <div>
+      <label class="text-sm font-semibold">
+        Judul
+      </label>
+      {{ form.title }}
+    </div>
+
+    <div>
+      <label class="text-sm font-semibold">
+        Isi Diskusi
+      </label>
+      {{ form.content }}
+    </div>
+
+    <div>
+      <label class="text-sm font-semibold">
+        Lampiran
+      </label>
+      {{ form.attachment }}
+    </div>
+
+    <button type="submit"
+      class="w-full bg-blue-600 text-white py-3 rounded-2xl font-semibold hover:bg-blue-700 transition">
+      Post Diskusi
+    </button>
+
+  </form>
+
+</div>
+
+{% endblock %}
