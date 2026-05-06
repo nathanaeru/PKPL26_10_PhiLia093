@@ -27,9 +27,7 @@ ASDOS_ACCESS_CODE = os.getenv("ASDOS_CODE")
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = (
-    f"django-insecure-{os.getenv("SECRET_KEY", "your_default_secret_key_here")}"
-)
+SECRET_KEY = f"django-insecure-{os.getenv('SECRET_KEY', 'your_default_secret_key_here')}"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "t")
@@ -48,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "accounts",
     "assignment",
+    "materi",
     "forum",
 ]
 
@@ -127,6 +126,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 LOGIN_REDIRECT_URL = "/"
 

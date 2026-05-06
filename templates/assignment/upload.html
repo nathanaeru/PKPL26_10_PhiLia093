@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Unggah Tugas - E-Learning
+{% endblock %}
+
+{% block content %}
+  <div class="bg-white/80 border border-white/60 shadow-xl rounded-3xl p-10">
+    <h1 class="text-3xl font-bold text-black mb-4">{% if edit_mode %}Edit Tugas{% else %}Unggah Tugas{% endif %}</h1>
+    <p class="text-sm text-gray-600 mb-6">Hanya dosen dan asisten dosen yang dapat mengelola tugas.</p>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+      {% csrf_token %}
+      <div>
+        {{ form.title.label_tag }}
+        {{ form.title }}
+      </div>
+      <div>
+        {{ form.description.label_tag }}
+        {{ form.description }}
+      </div>
+      <div>
+        {{ form.deadline.label_tag }}
+        {{ form.deadline }}
+      </div>
+      <div>
+        {{ form.file.label_tag }}
+        {{ form.file }}
+      </div>
+
+      <button type="submit" class="w-full text-white font-bold bg-blue-600 hover:bg-blue-700 rounded-xl py-3 transition">{% if edit_mode %}Simpan Perubahan{% else %}Unggah Tugas{% endif %}</button>
+    </form>
+  </div>
+{% endblock %}
