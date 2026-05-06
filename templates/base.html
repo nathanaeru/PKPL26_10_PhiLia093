@@ -32,6 +32,10 @@
         <a href="/" class="text-xl font-bold text-blue-600 tracking-tight hover:text-blue-800 transition">E-Learning</a>
         <div class="flex items-center space-x-4">
           {% if user.is_authenticated %}
+            {% if user.role == 'dosen' or user.role == 'asisten_dosen' %}
+              <a href="{% url 'materi:upload' %}" class="text-sm font-bold text-black hover:text-blue-600 transition">Upload Materi</a>
+              <a href="{% url 'assignment:upload' %}" class="text-sm font-bold text-black hover:text-blue-600 transition">Upload Tugas</a>
+            {% endif %}
             <span class="text-sm font-medium text-gray-700">Halo, <span class="font-bold text-black">{{ user.username }}</span> ({{ user.get_role_display }})</span>
             <a href="{% url 'accounts:logout' %}" class="text-sm font-bold text-red-500 hover:text-red-700 transition">Logout</a>
           {% else %}
@@ -41,6 +45,15 @@
         </div>
       </div>
     </nav>
+    {% if messages %}
+      <div class="max-w-5xl mx-auto px-6 mt-28 space-y-3">
+        {% for message in messages %}
+          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm text-slate-800 shadow-sm">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
 
     <main class="w-full max-w-5xl p-6 mt-24 relative z-10">
       {% block content %}

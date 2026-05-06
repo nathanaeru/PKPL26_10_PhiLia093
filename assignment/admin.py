@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import Submission, Tugas
 
-# Register your models here.
+admin.site.register(Tugas)
+admin.site.register(Submission)
