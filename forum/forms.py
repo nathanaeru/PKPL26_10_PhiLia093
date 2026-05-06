@@ -18,4 +18,9 @@ class PostForm(forms.ModelForm):
                 "placeholder": "Tuliskan isi diskusi...",
                 "class": "w-full px-4 py-3 mt-1 text-black bg-white/50 border border-white/40 rounded-xl"
             }),
+
+            "attachment": forms.ClearableFileInput(attrs={
+                "class": "hidden",
+                "id": "attachment"
+            }),
         }

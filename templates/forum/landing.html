@@ -242,7 +242,7 @@ Beranda - E-Learning
         {% if user == post.author %}
         <div class="flex gap-2">
 
-          {% if post.can_edit user %}
+          {% if user == post.author %}
           <a href="{% url 'forum:edit' post.id %}"
             class="px-3 py-2 text-[10px] font-semibold rounded-full bg-yellow-100 text-yellow-800">
             Edit
@@ -267,18 +267,26 @@ Beranda - E-Learning
       <!-- ATTACHMENT -->
       {% if post.attachment %}
 
-        {% with file=post.attachment.url %}
+        {% with file=post.attachment.url|lower %}
 
           {% if ".png" in file or ".jpg" in file or ".jpeg" in file %}
-          <img src="{{ post.attachment.url }}"
-            class="rounded-2xl mb-4 max-h-96 object-cover border border-white/40 shadow">
+
+            <div class="mt-4 overflow-hidden rounded-2xl border border-white/40 shadow bg-gray-100">
+              <img 
+                src="{{ post.attachment.url }}"
+                alt="Attachment"
+                class="w-full h-auto max-h-[500px] object-contain"
+              >
+            </div>
 
           {% elif ".pdf" in file %}
-          <a href="{{ post.attachment.url }}"
-            target="_blank"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-100 text-red-700 text-sm font-semibold hover:bg-red-200 transition mb-4">
-            📄 Lihat PDF
-          </a>
+
+            <a href="{{ post.attachment.url }}"
+              target="_blank"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-100 text-red-700 text-sm font-semibold hover:bg-red-200 transition mb-4">
+              📄 Lihat PDF
+            </a>
+
           {% endif %}
 
         {% endwith %}

@@ -30,12 +30,40 @@ Buat Diskusi
       {{ form.content }}
     </div>
 
-    <div>
-      <label class="text-sm font-semibold">
-        Lampiran
-      </label>
-      {{ form.attachment }}
+    <div class="mb-6">
+        <label class="block text-sm font-semibold text-black mb-3">
+            Lampiran
+        </label>
+
+        <label for="attachment"
+            class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 text-white font-semibold cursor-pointer hover:bg-blue-700 transition shadow-md">
+            
+            Pilih File
+        </label>
+
+        {{ form.attachment }}
+
+        <p id="file-name" class="mt-3 text-sm text-gray-500">
+            Belum ada file dipilih
+        </p>
+
+        <p class="mt-2 text-xs text-gray-400">
+            Format: PNG, JPG, JPEG, PDF
+        </p>
     </div>
+
+<script>
+  const attachmentInput = document.getElementById("attachment");
+  const fileName = document.getElementById("file-name");
+
+  attachmentInput.addEventListener("change", function () {
+    if (this.files.length > 0) {
+      fileName.textContent = this.files[0].name;
+    } else {
+      fileName.textContent = "Belum ada file dipilih";
+    }
+  });
+</script>
 
     <button type="submit"
       class="w-full bg-blue-600 text-white py-3 rounded-2xl font-semibold hover:bg-blue-700 transition">

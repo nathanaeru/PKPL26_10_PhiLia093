@@ -27,3 +27,4 @@ urlpatterns = [
     path("assignment/", include("assignment.urls")),
     path("", include("forum.urls")),
 ]
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

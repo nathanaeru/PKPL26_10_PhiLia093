@@ -51,7 +51,7 @@ class Post(models.Model):
         if user.role == "mahasiswa":
             return now <= self.created_at + timedelta(minutes=15)
 
-        if user.role in ["dosen", "asdos"]:
+        if user.role in ["dosen", "asisten_dosen"]:
             return now <= self.created_at + timedelta(minutes=30)
 
         return False
