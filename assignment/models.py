@@ -46,3 +46,6 @@ class Nilai(models.Model):
     nilai_angka = models.IntegerField()
     feedback = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Nilai {self.submission.student.username} - {self.nilai_angka}"
