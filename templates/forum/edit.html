@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Edit Diskusi
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+
+  <div class="bg-white/50 backdrop-blur-xl border border-white/60 shadow-xl rounded-3xl p-8">
+
+    <div class="mb-8">
+      <h1 class="text-3xl font-extrabold text-black mb-2">
+        Edit Diskusi
+      </h1>
+
+      <p class="text-gray-600">
+        Perbarui isi diskusi Anda.
+      </p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+      {% csrf_token %}
+
+      <div>
+        <label class="block text-sm font-semibold text-black mb-2">
+          Judul
+        </label>
+        {{ form.title }}
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-black mb-2">
+          Isi Diskusi
+        </label>
+        {{ form.content }}
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-black mb-2">
+          Lampiran
+        </label>
+        {{ form.attachment }}
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4">
+
+        <a href="{% url 'forum:landing' %}"
+          class="px-5 py-3 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition">
+          Batal
+        </a>
+
+        <button type="submit"
+          class="px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow-md">
+          Simpan Perubahan
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}
