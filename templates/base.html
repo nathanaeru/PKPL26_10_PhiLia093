@@ -57,7 +57,7 @@
 
           {% if user.is_authenticated %}
 
-            {% if user.role == 'dosen' or user.role == 'asisten_dosen' %}
+            {% if user.role == 'dosen' %}
               <a href="{% url 'materi:upload' %}" class="text-sm font-bold text-black hover:text-blue-600 transition">
                 Upload Materi
               </a>

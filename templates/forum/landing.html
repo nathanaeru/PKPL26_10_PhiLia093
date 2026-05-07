@@ -21,7 +21,7 @@ Beranda - E-Learning
         <p class="text-sm text-gray-500">{{ materis.count }} item</p>
       </div>
       {% if user.is_authenticated %}
-      {% if user.role == 'dosen' or user.role == 'asisten_dosen' %}
+      {% if user.role == 'dosen' %}
       <a href="{% url 'materi:upload' %}"
         class="text-sm font-semibold text-white bg-blue-600 px-4 py-2 rounded-full hover:bg-blue-700 transition">+
         Upload Materi</a>
@@ -95,7 +95,7 @@ Beranda - E-Learning
         <p class="text-sm text-gray-500">{{ tugass.count }} item</p>
       </div>
       {% if user.is_authenticated %}
-      {% if user.role == 'dosen' or user.role == 'asisten_dosen' %}
+      {% if user.role == 'dosen' %}
       <a href="{% url 'assignment:upload' %}"
         class="text-sm font-semibold text-white bg-blue-600 px-4 py-2 rounded-full hover:bg-blue-700 transition">+
         Upload Tugas</a>

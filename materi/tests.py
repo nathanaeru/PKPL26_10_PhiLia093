@@ -91,13 +91,12 @@ class MateriUploadSecurityTests(TestCase):
         self.assertTrue(materi.file.name.endswith(".txt"))
         self.assertNotIn("ringkasan_materi", materi.file.name)
 
-    def test_asdos_get_upload_materi_form(self):
+    def test_asdos_cannot_upload_materi(self):
         self.client.login(username="asdos_materi", password="passwordKuat123")
 
         response = self.client.get(self.upload_url)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "materi/upload.html")
+        self.assertEqual(response.status_code, 302)
 
     def test_upload_materi_invalid_post_renders_errors(self):
         self.client.login(username="dosen_materi", password="passwordKuat123")

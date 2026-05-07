@@ -110,12 +110,11 @@ class TugasUploadSecurityTests(TestCase):
         self.assertTrue(tugas.file.name.endswith(".pdf"))
         self.assertNotIn("instruksi_tugas", tugas.file.name)
 
-    def test_asdos_get_upload_tugas_form(self):
+    def test_asdos_cannot_upload_tugas(self):
         self.client.login(username="asdos_upload", password="passwordKuat123")
         response = self.client.get(self.upload_url)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "assignment/upload.html")
+        self.assertEqual(response.status_code, 302)
 
     def test_upload_tugas_invalid_post_renders_errors(self):
         self.client.login(username="dosen_upload", password="passwordKuat123")
@@ -377,6 +376,31 @@ class TugasUploadSecurityTests(TestCase):
         self.assertEqual(tugas_response.status_code, 200)
         self.assertEqual(submission_response.status_code, 200)
         self.assertContains(submission_response, tugas.title)
+
+    def test_daftar_submission_for_student_shows_only_own_submission(self):
+        tugas = self._create_tugas()
+        other_student = CustomUser.objects.create_user(
+            username="mhs_lain",
+            password="passwordKuat123",
+            role="mahasiswa",
+        )
+        own_submission = Submission.objects.create(tugas=tugas, student=self.mahasiswa)
+        Submission.objects.create(tugas=tugas, student=other_student)
+        Nilai.objects.create(
+            submission=own_submission,
+            penilai=self.dosen,
+            nilai_angka=92,
+            feedback="Bagus sekali",
+        )
+
+        self.client.login(username="mhs_upload", password="passwordKuat123")
+        response = self.client.get(reverse("assignment:daftar_submission", args=[tugas.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "mhs_upload")
+        self.assertContains(response, "Nilai: 92")
+        self.assertContains(response, "Bagus sekali")
+        self.assertNotContains(response, "mhs_lain")
 
     def test_beri_nilai_forbidden_for_mahasiswa(self):
         tugas = self._create_tugas()

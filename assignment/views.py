@@ -8,8 +8,8 @@ from .models import Tugas, Submission, Nilai
 
 @login_required(login_url="accounts:login")
 def upload_tugas(request):
-    if request.user.role not in ["dosen", "asisten_dosen"]:
-        messages.error(request, "Hanya dosen dan asisten dosen yang dapat mengunggah tugas.")
+    if request.user.role != "dosen":
+        messages.error(request, "Hanya dosen yang dapat mengunggah tugas.")
         return redirect("forum:landing")
 
     if request.method == "POST":
@@ -87,6 +87,11 @@ def daftar_submission(request, assignment_id):
     tugas = get_object_or_404(Tugas, id=assignment_id)
     submissions = Submission.objects.filter(tugas=tugas)
 
+    if request.user.role == "mahasiswa":
+        submissions = submissions.filter(student=request.user)
+
+    submissions = submissions.select_related("student")
+
     return render(
         request,
         "assignment/daftar_submission.html",
@@ -94,6 +99,7 @@ def daftar_submission(request, assignment_id):
             "submissions": submissions,
             "assignment_id": assignment_id,
             "tugas": tugas,
+            "show_all_submissions": request.user.role in ["dosen", "asisten_dosen"],
         },
     )
 

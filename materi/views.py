@@ -7,8 +7,8 @@ from .models import Materi
 
 @login_required(login_url="accounts:login")
 def upload_materi(request):
-    if request.user.role not in ["dosen", "asisten_dosen"]:
-        messages.error(request, "Hanya dosen dan asisten dosen yang dapat mengunggah materi.")
+    if request.user.role != "dosen":
+        messages.error(request, "Hanya dosen yang dapat mengunggah materi.")
         return redirect("forum:landing")
 
     if request.method == "POST":
