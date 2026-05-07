@@ -41,7 +41,11 @@ def edit_materi(request, pk):
     else:
         form = MateriForm(instance=materi)
 
-    return render(request, "materi/upload.html", {"form": form, "edit_mode": True, "materi": materi})
+    return render(
+        request,
+        "materi/upload.html",
+        {"form": form, "edit_mode": True, "materi": materi},
+    )
 
 
 @login_required(login_url="accounts:login")
@@ -56,4 +60,6 @@ def delete_materi(request, pk):
         messages.success(request, "Materi berhasil dihapus.")
         return redirect("forum:landing")
 
-    return render(request, "materi/confirm_delete.html", {"object": materi, "type": "materi"})
+    return render(
+        request, "materi/confirm_delete.html", {"object": materi, "type": "materi"}
+    )

@@ -236,11 +236,19 @@ class TugasUploadSecurityTests(TestCase):
         tugas_path = secure_tugas_upload_path(None, "tugas.PDF")
         materi_path = secure_materi_upload_path(None, "materi.TXT")
 
-        self.assertTrue(generic_path.startswith("folder\\") or generic_path.startswith("folder/"))
+        self.assertTrue(
+            generic_path.startswith("folder\\") or generic_path.startswith("folder/")
+        )
         self.assertTrue(generic_path.endswith(".pdf"))
-        self.assertTrue(tugas_path.startswith("tugas_files\\") or tugas_path.startswith("tugas_files/"))
+        self.assertTrue(
+            tugas_path.startswith("tugas_files\\")
+            or tugas_path.startswith("tugas_files/")
+        )
         self.assertTrue(tugas_path.endswith(".pdf"))
-        self.assertTrue(materi_path.startswith("materi_files\\") or materi_path.startswith("materi_files/"))
+        self.assertTrue(
+            materi_path.startswith("materi_files\\")
+            or materi_path.startswith("materi_files/")
+        )
         self.assertTrue(materi_path.endswith(".txt"))
         self.assertNotIn("Nama File", generic_path)
 
@@ -254,7 +262,9 @@ class TugasUploadSecurityTests(TestCase):
             content_type="text/html",
         )
 
-        with self.assertRaisesMessage(ValidationError, "Content-Type file tidak diizinkan."):
+        with self.assertRaisesMessage(
+            ValidationError, "Content-Type file tidak diizinkan."
+        ):
             validate_secure_uploaded_file(file)
 
     def test_secure_upload_validator_rejects_invalid_docx_magic_bytes(self):
@@ -264,7 +274,9 @@ class TugasUploadSecurityTests(TestCase):
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
 
-        with self.assertRaisesMessage(ValidationError, "Isi file arsip Office/ZIP tidak valid."):
+        with self.assertRaisesMessage(
+            ValidationError, "Isi file arsip Office/ZIP tidak valid."
+        ):
             validate_secure_uploaded_file(file)
 
     def test_secure_upload_validator_accepts_valid_docx_zip_and_pptx(self):
@@ -280,7 +292,9 @@ class TugasUploadSecurityTests(TestCase):
             ),
         ]:
             with self.subTest(filename=filename):
-                file = SimpleUploadedFile(filename, b"PK\x03\x04data", content_type=content_type)
+                file = SimpleUploadedFile(
+                    filename, b"PK\x03\x04data", content_type=content_type
+                )
                 self.assertIsNone(validate_secure_uploaded_file(file))
 
     def test_secure_upload_validator_rejects_invalid_legacy_office_magic_bytes(self):
@@ -290,7 +304,9 @@ class TugasUploadSecurityTests(TestCase):
             content_type="application/msword",
         )
 
-        with self.assertRaisesMessage(ValidationError, "Isi file Office lama tidak valid."):
+        with self.assertRaisesMessage(
+            ValidationError, "Isi file Office lama tidak valid."
+        ):
             validate_secure_uploaded_file(file)
 
     def test_secure_upload_validator_accepts_valid_legacy_office_files(self):
@@ -300,7 +316,9 @@ class TugasUploadSecurityTests(TestCase):
             ("slide.ppt", "application/vnd.ms-powerpoint"),
         ]:
             with self.subTest(filename=filename):
-                file = SimpleUploadedFile(filename, header + b"data", content_type=content_type)
+                file = SimpleUploadedFile(
+                    filename, header + b"data", content_type=content_type
+                )
                 self.assertIsNone(validate_secure_uploaded_file(file))
 
     def test_secure_upload_validator_rejects_non_utf8_txt(self):
@@ -310,7 +328,9 @@ class TugasUploadSecurityTests(TestCase):
             content_type="text/plain",
         )
 
-        with self.assertRaisesMessage(ValidationError, "Isi file TXT harus berupa teks UTF-8."):
+        with self.assertRaisesMessage(
+            ValidationError, "Isi file TXT harus berupa teks UTF-8."
+        ):
             validate_secure_uploaded_file(file)
 
     def test_edit_tugas_get_and_post_updates_object(self):
@@ -394,7 +414,9 @@ class TugasUploadSecurityTests(TestCase):
         )
 
         self.client.login(username="mhs_upload", password="passwordKuat123")
-        response = self.client.get(reverse("assignment:daftar_submission", args=[tugas.pk]))
+        response = self.client.get(
+            reverse("assignment:daftar_submission", args=[tugas.pk])
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "mhs_upload")
@@ -407,7 +429,9 @@ class TugasUploadSecurityTests(TestCase):
         submission = Submission.objects.create(tugas=tugas, student=self.mahasiswa)
         self.client.login(username="mhs_upload", password="passwordKuat123")
 
-        response = self.client.get(reverse("assignment:beri_nilai", args=[submission.pk]))
+        response = self.client.get(
+            reverse("assignment:beri_nilai", args=[submission.pk])
+        )
 
         self.assertEqual(response.status_code, 403)
 
@@ -416,7 +440,9 @@ class TugasUploadSecurityTests(TestCase):
         submission = Submission.objects.create(tugas=tugas, student=self.mahasiswa)
         self.client.login(username="dosen_upload", password="passwordKuat123")
 
-        get_response = self.client.get(reverse("assignment:beri_nilai", args=[submission.pk]))
+        get_response = self.client.get(
+            reverse("assignment:beri_nilai", args=[submission.pk])
+        )
         self.assertEqual(get_response.status_code, 200)
 
         post_response = self.client.post(
@@ -440,7 +466,9 @@ class TugasUploadSecurityTests(TestCase):
         )
         self.client.login(username="dosen_upload", password="passwordKuat123")
 
-        response = self.client.get(reverse("assignment:beri_nilai", args=[submission.pk]))
+        response = self.client.get(
+            reverse("assignment:beri_nilai", args=[submission.pk])
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "80")
@@ -470,7 +498,9 @@ class TugasUploadSecurityTests(TestCase):
         )
         self.client.login(username="mhs_upload", password="passwordKuat123")
 
-        response = self.client.get(reverse("assignment:submission_status", args=[tugas.pk]))
+        response = self.client.get(
+            reverse("assignment:submission_status", args=[tugas.pk])
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "85")
@@ -480,7 +510,9 @@ class TugasUploadSecurityTests(TestCase):
         Submission.objects.create(tugas=tugas, student=self.mahasiswa)
         self.client.login(username="mhs_upload", password="passwordKuat123")
 
-        response = self.client.get(reverse("assignment:submission_status", args=[tugas.pk]))
+        response = self.client.get(
+            reverse("assignment:submission_status", args=[tugas.pk])
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, tugas.title)
@@ -489,7 +521,9 @@ class TugasUploadSecurityTests(TestCase):
         tugas = self._create_tugas()
         self.client.login(username="dosen_upload", password="passwordKuat123")
 
-        response = self.client.get(reverse("assignment:upload_submisi", args=[tugas.pk]))
+        response = self.client.get(
+            reverse("assignment:upload_submisi", args=[tugas.pk])
+        )
 
         self.assertEqual(response.status_code, 302)
 
@@ -497,7 +531,9 @@ class TugasUploadSecurityTests(TestCase):
         tugas = self._create_tugas()
         self.client.login(username="mhs_upload", password="passwordKuat123")
 
-        get_response = self.client.get(reverse("assignment:upload_submisi", args=[tugas.pk]))
+        get_response = self.client.get(
+            reverse("assignment:upload_submisi", args=[tugas.pk])
+        )
         self.assertEqual(get_response.status_code, 200)
 
         invalid_response = self.client.post(
@@ -519,20 +555,28 @@ class TugasUploadSecurityTests(TestCase):
             {"file": self._txt_file("jawaban_baru.txt")},
         )
         self.assertEqual(update_response.status_code, 302)
-        self.assertEqual(Submission.objects.filter(tugas=tugas, student=self.mahasiswa).count(), 1)
+        self.assertEqual(
+            Submission.objects.filter(tugas=tugas, student=self.mahasiswa).count(), 1
+        )
 
     def test_delete_submisi_rejects_staff_and_deletes_for_owner(self):
         tugas = self._create_tugas()
         submission = Submission.objects.create(tugas=tugas, student=self.mahasiswa)
 
         self.client.login(username="dosen_upload", password="passwordKuat123")
-        staff_response = self.client.get(reverse("assignment:delete_submisi", args=[tugas.pk]))
+        staff_response = self.client.get(
+            reverse("assignment:delete_submisi", args=[tugas.pk])
+        )
         self.assertEqual(staff_response.status_code, 302)
 
         self.client.login(username="mhs_upload", password="passwordKuat123")
-        get_response = self.client.get(reverse("assignment:delete_submisi", args=[tugas.pk]))
+        get_response = self.client.get(
+            reverse("assignment:delete_submisi", args=[tugas.pk])
+        )
         self.assertEqual(get_response.status_code, 200)
 
-        post_response = self.client.post(reverse("assignment:delete_submisi", args=[tugas.pk]))
+        post_response = self.client.post(
+            reverse("assignment:delete_submisi", args=[tugas.pk])
+        )
         self.assertEqual(post_response.status_code, 302)
         self.assertFalse(Submission.objects.filter(pk=submission.pk).exists())

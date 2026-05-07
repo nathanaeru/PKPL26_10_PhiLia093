@@ -109,9 +109,7 @@ def beri_nilai(request, submission_id):
     submission = get_object_or_404(Submission, id=submission_id)
 
     if not is_penilai(request.user):
-        return HttpResponseForbidden(
-            "Kamu tidak punya akses untuk memberi nilai."
-        )
+        return HttpResponseForbidden("Kamu tidak punya akses untuk memberi nilai.")
 
     try:
         nilai_obj = Nilai.objects.get(submission=submission)
