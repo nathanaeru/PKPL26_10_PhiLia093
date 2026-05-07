@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 from django.http import HttpResponseForbidden
 from .forms import TugasForm, SubmissionForm
 from .models import Tugas, Submission, Nilai
@@ -153,20 +154,23 @@ def submission_status(request, tugas_id):
     if not _require_role(request.user, "mahasiswa"):
         messages.error(request, "Halaman ini hanya dapat diakses oleh mahasiswa.")
         return redirect("forum:landing")
-
+ 
     tugas = get_object_or_404(Tugas, pk=tugas_id)
-
+ 
     existing_submission = Submission.objects.filter(
         tugas=tugas, student=request.user
     ).first()
-
+ 
     nilai_obj = None
     if existing_submission:
         try:
             nilai_obj = Nilai.objects.get(submission=existing_submission)
         except Nilai.DoesNotExist:
             pass
-
+ 
+    # Hitung apakah deadline sudah lewat, lalu kirim ke template
+    deadline_passed = bool(tugas.deadline and timezone.now() > tugas.deadline)
+ 
     return render(
         request,
         "assignment/submission_status.html",
@@ -174,6 +178,7 @@ def submission_status(request, tugas_id):
             "tugas": tugas,
             "submission": existing_submission,
             "nilai": nilai_obj,
+            "deadline_passed": deadline_passed,   # ← tambahan baru
         },
     )
 
@@ -183,13 +188,18 @@ def upload_submisi(request, tugas_id):
     if not _require_role(request.user, "mahasiswa"):
         messages.error(request, "Hanya mahasiswa yang dapat mengumpulkan submisi.")
         return redirect("forum:landing")
-
+ 
     tugas = get_object_or_404(Tugas, pk=tugas_id)
-
+ 
+    # Mitigasi: cek deadline sebelum memproses apapun
+    if tugas.deadline and timezone.now() > tugas.deadline:
+        messages.error(request, "Deadline tugas ini sudah lewat. Submisi tidak dapat dilakukan.")
+        return redirect("assignment:submission_status", tugas_id=tugas.pk)
+ 
     existing_submission = Submission.objects.filter(
         tugas=tugas, student=request.user
     ).first()
-
+ 
     if request.method == "POST":
         form = SubmissionForm(request.POST, request.FILES)
         if form.is_valid():
@@ -203,11 +213,11 @@ def upload_submisi(request, tugas_id):
                 submission.student = request.user
                 submission.save()
                 messages.success(request, "Submisi Anda berhasil diunggah!")
-
+ 
             return redirect("assignment:submission_status", tugas_id=tugas.pk)
     else:
         form = SubmissionForm()
-
+ 
     return render(
         request,
         "assignment/upload_submisi.html",
@@ -217,26 +227,32 @@ def upload_submisi(request, tugas_id):
             "existing_submission": existing_submission,
         },
     )
-
-
+ 
+ 
 @login_required(login_url="accounts:login")
 def delete_submisi(request, tugas_id):
     if not _require_role(request.user, "mahasiswa"):
         messages.error(request, "Akses ditolak.")
         return redirect("forum:landing")
-
+ 
     tugas = get_object_or_404(Tugas, pk=tugas_id)
+ 
+    # Mitigasi: cek deadline sebelum memproses hapus
+    if tugas.deadline and timezone.now() > tugas.deadline:
+        messages.error(request, "Deadline tugas ini sudah lewat. Submisi tidak dapat dihapus.")
+        return redirect("assignment:submission_status", tugas_id=tugas.pk)
+ 
     submission = get_object_or_404(
         Submission,
         tugas=tugas,
         student=request.user,
     )
-
+ 
     if request.method == "POST":
         submission.delete()
         messages.success(request, "Submisi berhasil dihapus.")
         return redirect("assignment:submission_status", tugas_id=tugas.pk)
-
+ 
     return render(
         request,
         "assignment/confirm_delete_submisi.html",
