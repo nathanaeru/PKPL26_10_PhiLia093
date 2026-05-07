@@ -1,7 +1,7 @@
 from django.core.files.storage import Storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
 
 from accounts.models import CustomUser
@@ -580,3 +580,71 @@ class TugasUploadSecurityTests(TestCase):
         )
         self.assertEqual(post_response.status_code, 302)
         self.assertFalse(Submission.objects.filter(pk=submission.pk).exists())
+
+
+class AssignmentSkenarioSecurityTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.dosen = CustomUser.objects.create_user(
+            username="dosen_sec", password="password123", role="dosen"
+        )
+        self.mhs = CustomUser.objects.create_user(
+            username="mhs_sec", password="password123", role="mahasiswa"
+        )
+        self.tugas = Tugas.objects.create(
+            title="Tugas Original", description="Desc", uploaded_by=self.dosen
+        )
+
+    def test_tc_ba_04_akses_tanpa_login_ditolak(self):
+        """TC-BA-04: Memastikan halaman daftar tugas tidak bisa diakses tanpa login"""
+        response = self.client.get(reverse("assignment:daftar_tugas"))
+        self.assertEqual(response.status_code, 302)  # Harus dialihkan ke halaman login
+        self.assertTrue(response.url.startswith(reverse("accounts:login")))
+
+    def test_tc_sqli_04b_pencarian_nilai_mahasiswa(self):
+        """TC-SQLi-04b: Memastikan endpoint terkait nilai/submisi aman dari SQL Injection"""
+        self.client.login(username="dosen_sec", password="password123")
+        payload_sqli = "2100001' UNION SELECT * FROM accounts_customuser --"
+
+        # Simulasi injeksi pada URL parameter
+        response = self.client.get(
+            reverse("assignment:daftar_submission", args=[self.tugas.pk]),
+            {"q": payload_sqli},
+        )
+
+        # ORM Django harus menangani ini dengan aman (tidak crash/HTTP 500)
+        self.assertEqual(response.status_code, 200)
+        # Pastikan tidak ada data sensitif yang bocor ke HTML
+        self.assertNotContains(response, "passwordKuat")
+
+    def test_tc_ci_04b_code_injection_judul_tugas(self):
+        """TC-CI-04b: Memastikan injeksi XSS pada Judul Tugas di-escape oleh Django Template"""
+        self.client.login(username="dosen_sec", password="password123")
+        payload_xss = "<script>alert('xss-tugas')</script>"
+
+        # Dosen membuat tugas dengan judul berbahaya
+        tugas_xss = Tugas.objects.create(
+            title=payload_xss, description="Bahaya", uploaded_by=self.dosen
+        )
+
+        # Mahasiswa melihat daftar tugas
+        self.client.login(username="mhs_sec", password="password123")
+        response = self.client.get(reverse("assignment:daftar_tugas"))
+
+        # Pastikan tag <script> diubah menjadi entitas HTML aman (&lt;script&gt;)
+        self.assertContains(
+            response, "&lt;script&gt;alert(&#x27;xss-tugas&#x27;)&lt;/script&gt;"
+        )
+        self.assertNotContains(response, payload_xss)  # Tidak boleh ada raw script
+
+    def test_tc_csrf_04b_form_submit_tugas_atau_nilai(self):
+        """TC-CSRF-04b: Memastikan form submit tugas menolak request tanpa CSRF valid"""
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.login(username="mhs_sec", password="password123")
+
+        # Simulasi POST tanpa menyertakan CSRF token
+        response = csrf_client.post(
+            reverse("assignment:upload_submisi", args=[self.tugas.pk]),
+            {"file": SimpleUploadedFile("jawaban.txt", b"isi jawaban")},
+        )
+        self.assertEqual(response.status_code, 403)  # Harus Forbidden
