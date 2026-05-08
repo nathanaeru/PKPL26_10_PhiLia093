@@ -171,3 +171,7 @@ Aplikasi ini merupakan sistem **E-Learning University System**. Fitur utama yang
 Hasil test menunjukkan bahwa semua pengujian unit berhasil tanpa kegagalan, menandakan bahwa fitur-fitur utama aplikasi berfungsi dengan baik dan tidak ada regresi yang terjadi setelah implementasi mitigasi keamanan.
 
 [Test log](tests.log)
+
+# 5. Link Video Demo
+
+[https://youtu.be/CLKqUj51pQc](https://youtu.be/CLKqUj51pQc)
