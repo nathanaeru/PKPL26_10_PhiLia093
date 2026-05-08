@@ -1,3 +1,5 @@
+import time
+
 from django.test import TestCase, Client
 from django.urls import reverse
 from accounts.models import CustomUser
@@ -62,26 +64,21 @@ class ForumSecurityTests(TestCase):
         except Exception:
             pass
 
+
 class ForumFeatureTests(TestCase):
     def setUp(self):
         self.client = Client()
 
         self.mahasiswa = CustomUser.objects.create_user(
-            username="raihana",
-            password="password123",
-            role="mahasiswa"
+            username="raihana", password="password123", role="mahasiswa"
         )
 
         self.other_user = CustomUser.objects.create_user(
-            username="userlain",
-            password="password123",
-            role="mahasiswa"
+            username="userlain", password="password123", role="mahasiswa"
         )
 
         self.post = Post.objects.create(
-            title="Post Awal",
-            content="Isi Post",
-            author=self.mahasiswa
+            title="Post Awal", content="Isi Post", author=self.mahasiswa
         )
 
     def test_create_post_success(self):
@@ -91,16 +88,11 @@ class ForumFeatureTests(TestCase):
 
         response = self.client.post(
             reverse("forum:create"),
-            {
-                "title": "Diskusi Baru",
-                "content": "Isi diskusi baru"
-            }
+            {"title": "Diskusi Baru", "content": "Isi diskusi baru"},
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(
-            Post.objects.filter(title="Diskusi Baru").exists()
-        )
+        self.assertTrue(Post.objects.filter(title="Diskusi Baru").exists())
 
     def test_reply_post_success(self):
         """User berhasil membalas post"""
@@ -109,18 +101,12 @@ class ForumFeatureTests(TestCase):
 
         response = self.client.post(
             reverse("forum:reply", args=[self.post.id]),
-            {
-                "title": "Balasan",
-                "content": "Ini balasan"
-            }
+            {"title": "Balasan", "content": "Ini balasan"},
         )
 
         self.assertEqual(response.status_code, 302)
 
-        reply_exists = Post.objects.filter(
-            parent=self.post,
-            title="Balasan"
-        ).exists()
+        reply_exists = Post.objects.filter(parent=self.post, title="Balasan").exists()
 
         self.assertTrue(reply_exists)
 
@@ -130,8 +116,7 @@ class ForumFeatureTests(TestCase):
         self.client.login(username="userlain", password="password123")
 
         response = self.client.get(
-            reverse("forum:edit", args=[self.post.id]),
-            follow=True
+            reverse("forum:edit", args=[self.post.id]), follow=True
         )
 
         self.assertContains(response, "Waktu edit sudah habis.")
@@ -141,15 +126,11 @@ class ForumFeatureTests(TestCase):
 
         self.client.login(username="raihana", password="password123")
 
-        response = self.client.post(
-            reverse("forum:delete", args=[self.post.id])
-        )
+        response = self.client.post(reverse("forum:delete", args=[self.post.id]))
 
         self.assertEqual(response.status_code, 302)
 
-        self.assertFalse(
-            Post.objects.filter(id=self.post.id).exists()
-        )
+        self.assertFalse(Post.objects.filter(id=self.post.id).exists())
 
     def test_user_cannot_delete_other_user_post(self):
         """User tidak boleh menghapus post milik orang lain"""
@@ -157,15 +138,12 @@ class ForumFeatureTests(TestCase):
         self.client.login(username="userlain", password="password123")
 
         response = self.client.post(
-            reverse("forum:delete", args=[self.post.id]),
-            follow=True
+            reverse("forum:delete", args=[self.post.id]), follow=True
         )
 
         self.assertContains(response, "Tidak punya izin.")
 
-        self.assertTrue(
-            Post.objects.filter(id=self.post.id).exists()
-        )
+        self.assertTrue(Post.objects.filter(id=self.post.id).exists())
 
     def test_landing_page_access(self):
         """Landing page forum dapat diakses"""
@@ -178,15 +156,13 @@ class ForumFeatureTests(TestCase):
         """Post terbaru tampil paling atas"""
 
         old_post = Post.objects.create(
-            title="Post Lama",
-            content="lama",
-            author=self.mahasiswa
+            title="Post Lama", content="lama", author=self.mahasiswa
         )
 
+        time.sleep(1)  # Pastikan ada perbedaan waktu antara post lama dan baru.
+
         new_post = Post.objects.create(
-            title="Post Baru",
-            content="baru",
-            author=self.mahasiswa
+            title="Post Baru", content="baru", author=self.mahasiswa
         )
 
         response = self.client.get(reverse("forum:landing"))
@@ -194,4 +170,3 @@ class ForumFeatureTests(TestCase):
         posts = list(response.context["posts"])
 
         self.assertEqual(posts[0], new_post)
-        
