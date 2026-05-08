@@ -4,7 +4,6 @@
 *.pot
 *.pyc
 **pycache**
-media
 
 # Backup files
 *.bak
