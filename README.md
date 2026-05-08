@@ -146,3 +146,25 @@ Aplikasi ini merupakan sistem **E-Learning University System**. Fitur utama yang
     # ORM memisahkan query dan data (parameterized)
     tugas = Tugas.objects.filter(title=input_judul)
     ```
+
+## 3. Screenshot Aplikasi
+
+### Landing Page (Dashboard
+
+![Dashboard](assets/dash.png)
+
+### Login Rate Limiting
+
+![Login Rate Limiting](assets/login.png)
+
+### XSS Prevention
+
+![XSS Prevention](assets/xss.png)
+
+### CSRF Protection
+
+![CSRF Protection](assets/csrf.png)
+
+### Test Runs
+
+![Test Runs](assets/tests.png)
