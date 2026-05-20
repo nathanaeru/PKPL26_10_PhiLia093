@@ -648,3 +648,56 @@ class AssignmentSkenarioSecurityTests(TestCase):
             {"file": SimpleUploadedFile("jawaban.txt", b"isi jawaban")},
         )
         self.assertEqual(response.status_code, 403)  # Harus Forbidden
+
+
+class AssignmentSecurityTestsTambahan(TestCase):
+    def setUp(self):
+        self.client = Client(enforce_csrf_checks=True)
+        self.dosen = CustomUser.objects.create_user(
+            username="dosen_test", password="password123", role="dosen"
+        )
+        self.mhs = CustomUser.objects.create_user(
+            username="mhs_test", password="password123", role="mahasiswa"
+        )
+
+        self.tugas = Tugas.objects.create(
+            title="Tugas 1", description="Kerjakan ini", uploaded_by=self.dosen
+        )
+        self.submission = Submission.objects.create(tugas=self.tugas, student=self.mhs)
+
+    def test_tc_ci_04b_code_injection_feedback_nilai(self):
+        """TC-CI-04b: Memastikan injeksi XSS pada Feedback Nilai di-escape oleh Django"""
+        # Simulasi oknum asdos/dosen yang iseng memasukkan tag berbahaya
+        xss_payload = "<script>alert('Sistem kamu diretas!')</script>"
+
+        Nilai.objects.create(
+            submission=self.submission,
+            penilai=self.dosen,
+            nilai_angka=80,
+            feedback=xss_payload,
+        )
+
+        # Mahasiswa login dan mengecek halaman status submission
+        self.client.login(username="mhs_test", password="password123")
+        # Sesuaikan dengan nama URL name di urls.py kamu, biasanya mengarah ke view detail submission
+        response = self.client.get(f"/assignment/{self.tugas.id}/status/")
+
+        # Cek apakah tag <script> di-escape menjadi entitas HTML (&lt;script&gt;)
+        escaped_payload = (
+            "&lt;script&gt;alert(&#x27;Sistem kamu diretas!&#x27;)&lt;/script&gt;"
+        )
+
+        # Konten harus berisi string yang sudah diamankan
+        self.assertContains(response, escaped_payload)
+        # Raw script tidak boleh dirender sama sekali
+        self.assertNotContains(response, xss_payload)
+
+    def test_tc_csrf_04b_form_delete_tugas(self):
+        """TC-CSRF-04b: Memastikan aksi destruktif seperti hapus tugas dilindungi CSRF"""
+        self.client.login(username="dosen_test", password="password123")
+
+        # Melakukan POST ke endpoint hapus tanpa token CSRF
+        response = self.client.post(f"/assignment/{self.tugas.id}/delete/")
+
+        # Harus dikembalikan 403 Forbidden
+        self.assertEqual(response.status_code, 403)

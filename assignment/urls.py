@@ -5,12 +5,10 @@ app_name = "assignment"
 
 urlpatterns = [
     path("", views.daftar_tugas, name="daftar_tugas"),
-
     # staf: manajemen tugas
     path("upload/", views.upload_tugas, name="upload"),
     path("<int:pk>/edit/", views.edit_tugas, name="edit"),
     path("<int:pk>/delete/", views.delete_tugas, name="delete"),
-
     # grading / lihat submissions
     path(
         "<int:assignment_id>/submissions/",
@@ -22,7 +20,6 @@ urlpatterns = [
         views.beri_nilai,
         name="beri_nilai",
     ),
-
     # mahasiswa: upload submisi
     path(
         "<int:tugas_id>/status/",

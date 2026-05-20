@@ -247,3 +247,40 @@ class MateriSkenarioSecurityTests(TestCase):
             self.assertNotContains(response, payload_xss)
         except:
             pass  # Lewati jika URL list materi belum terdefinisi
+
+
+class MateriSecurityTestsTambahan(TestCase):
+    def setUp(self):
+        # Enforce CSRF checks wajib diaktifkan pada Client untuk mengetes serangan CSRF
+        self.client = Client(enforce_csrf_checks=True)
+        self.dosen = CustomUser.objects.create_user(
+            username="dosen_test", password="password123", role="dosen"
+        )
+        self.materi = Materi.objects.create(
+            title="Materi A", description="Deskripsi awal", uploaded_by=self.dosen
+        )
+
+    def test_tc_csrf_04_materi_upload_protection(self):
+        """TC-CSRF-04: Memastikan upload materi menolak request POST tanpa token CSRF valid"""
+        self.client.login(username="dosen_test", password="password123")
+
+        # Kirim request POST tanpa menyertakan token csrfmiddlewaretoken
+        response = self.client.post(
+            "/materi/upload/", {"title": "Materi Hacked", "description": "Bypass CSRF"}
+        )
+
+        # Harus mengembalikan HTTP 403 Forbidden (Ditolak oleh middleware Django)
+        self.assertEqual(response.status_code, 403)
+
+    def test_tc_sqli_04_manipulasi_id_materi(self):
+        """TC-SQLi-04: Memastikan endpoint materi aman dari injeksi SQL pada parameter ID"""
+        self.client.login(username="dosen_test", password="password123")
+
+        # Payload SQLi klasik
+        sqli_payload = "1 OR 1=1"
+
+        # Coba akses URL delete/edit dengan payload tersebut
+        response = self.client.get(f"/materi/{sqli_payload}/delete/")
+
+        # Django ORM yang aman akan melempar error 404 (Not Found) karena string tidak bisa diconvert ke integer (Primary Key), bukan 500 (Server Error/Eksekusi berhasil)
+        self.assertEqual(response.status_code, 404)
